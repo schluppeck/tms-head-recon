@@ -10,12 +10,21 @@
 import os
 import sys
 import numpy as np
-
 import mne
 import matplotlib.pyplot as plt
 from scipy.sparse.csgraph import dijkstra
 from scipy.sparse import csr_matrix
 from pathlib import Path
+
+
+# check command line args
+if len(sys.argv) == 2:
+    prefer = sys.argv[1]
+    if prefer not in ['up', 'down']:
+        print("Usage: python create_montage_viz.py [up|down]")
+        sys.exit(1)
+else:
+    prefer = 'up'  # default preference
 
 
 def key_and_exit():
@@ -73,7 +82,7 @@ def reconstruct_path(pred_matrix, source_idx, dest_idx, source_row=0):
     return path[::-1]  # reverse to get source->dest order
 
 
-def build_sagittal_constrained_adjacency(vertices, faces, x_tolerance=5):
+def build_sagittal_constrained_adjacency(vertices, faces, x_tolerance=5, z_prefer='down'):
     """Generate adjacency matrix with penalty for deviating from sagittal plane
 
     This constrains paths to stay near a constant x-value by adding high costs
@@ -102,8 +111,19 @@ def build_sagittal_constrained_adjacency(vertices, faces, x_tolerance=5):
             # Add penalty for x-deviation from median
             x_dev = (abs(vertices[v1, 0] - x_median) +
                      abs(vertices[v2, 0] - x_median)) / 2
+
             # high penalty for deviation
             penalty = max(0, (x_dev - x_tolerance) * 10)
+
+            # Add penalty if path has z values that are either negative or positive
+            z_pos = vertices[v2, 2] + vertices[v1, 2]
+
+            if z_prefer == 'up' and z_pos < 0:
+                penalty += abs(z_pos) * 10
+
+            # reality check: prefer downward paths?
+            if z_prefer == 'down' and z_pos >= 0:
+                penalty += abs(z_pos) * 10
 
             total_weight = dist + penalty
             edges.append([v1, v2])
@@ -192,7 +212,7 @@ vertices_mm = vertices * 1000
 
 # Use sagittal-constrained adjacency for path along constant x
 adj_matrix = build_sagittal_constrained_adjacency(
-    vertices_mm, faces, x_tolerance=5)
+    vertices_mm, faces, x_tolerance=5, z_prefer=prefer)  # pass up/down preference
 
 # compute geodesic with sagittal constraint
 distances, pd = dijkstra(adj_matrix, indices=[

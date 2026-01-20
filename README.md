@@ -3,7 +3,7 @@
 Some notes to figure out how to show TMS stim sites scalp/skull surfaces w/ promixity to particular regions in the brain
 
 <center>
-<img src="./tms_navigation.gif" alt="viz example" width="50%"/>
+<img src="images/tms_navigation.gif" alt="viz example" width="50%"/>
 </center>
 
 ## General ideas
@@ -33,8 +33,8 @@ This will allow you to get some nice screengrabs of skull / skin surfaces. Etc.
 I also used this to approximate the inion/nasion points on the scalp surface for Cz locating. See code to check if that makes sense
 
 <center>
-<img src="./nasion-cursor.png" alt="nasion" width="45%"/>
-<img src="./inion-cursor.png" alt="inion" width="45%"/>
+<img src="images/nasion-cursor.png" alt="nasion" width="45%"/>
+<img src="images/inion-cursor.png" alt="inion" width="45%"/>
 </center>
 
 ## Visualizing TMS coil positions w/ CZ etc.
@@ -59,6 +59,29 @@ conda activate /Applications/MNE-Python/1.11.0_0/.mne-python
 python ./create_montage_viz.py
 ```
 
-![viz example](./tms_navigation.gif)
+![viz example](images/tms_navigation.gif)
 
 Etc. etc...
+
+
+## Penalty for particular paths
+
+- code includes a penalty for paths that deviate from sagittal plane `x_dev` is penalized.
+- to avoid the shorted path hugging the surface inferiorly (when skull/scalp surfaces are relatively clipped inferiorly), a penalty for low z values (when `z_pos` is negative) is included.
+
+```bash
+# default behaviour PREFER upwards paths
+python create_montage_viz.py    # default behaviour
+python create_montage_viz.py up # default behaviour
+
+# as a reality check you can also try to penalise upwards paths by PREFERing downwards paths
+python create_montage_viz.py down
+```
+
+<figure>
+<center>
+<img src="images/prefer-up.png" alt="path penalties" width="48%"/>
+<img src="images/prefer-down.png" alt="path penalties" width="48%"/>
+</center>
+<caption>Paths generated with preference for up (left) or down (right) directions</caption>
+</figure>
